@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import {View, ScrollView, Text, Button, TextInput, Pressable, StyleSheet, TouchableOpacity, Dimensions, Switch } from 'react-native';
+import {View, ScrollView, Text, Button, TextInput, Pressable, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { DataTable, Searchbar } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
@@ -9,7 +9,7 @@ import AnimatedModal from '../../components/animatedModal';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 const {width, height} = Dimensions.get('window');
 
-const MyRequestScreen = () => {
+const SongManager = () => {
     const [page, setPage] = useState(0);
     const [numberOfItemsPerPageList] = useState([5, 10, 15]);
     const [loading, setLoading] = useState(false);
@@ -29,19 +29,12 @@ const MyRequestScreen = () => {
     const [dj, setDj] = useState("");
     const [requestSongId, setRequestSongId] = useState(0);
 
-    const [isEnabledToday, setIsEnabledToday] = useState(true);
-    const toggleSwitch = () => {
-        setIsEnabledToday(previousState => !previousState);
-    }
-
     useEffect(() => {
-        getSongsCount(isEnabledToday);
-    }, [searchQuery, isEnabledToday]);
-    const getSongsCount = async (todayFlag) => {
-        const phoneN = await AsyncStorage.getItem('phone-number');
-        // today=' + todayFlag + '&phone=' + phoneN
+        getSongsCount();
+    }, [searchQuery]);
+    const getSongsCount = async () => {
         await axios
-            .get('/songmng/getByUserCount?searchQuery='+searchQuery+'&today='+todayFlag+'&phone='+phoneN)
+            .get('/songmng/getCount?searchQuery='+searchQuery)
             .then(function (res) {
                 let songsData = res.data;
                 setCountSongs(songsData);
@@ -49,12 +42,11 @@ const MyRequestScreen = () => {
                 console.error(error);
             });
     }
-    const getSongs = async (from, to, todayFlag) => {
+    const getSongs = async (from, to) => {
         if (to > 0 && from < to) {
             setLoading(true);
-            const phoneN = await AsyncStorage.getItem('phone-number');
             await axios
-                .get('/songmng/getByUser?from='+from+'&to='+to+'&titleSort='+titleSort+'&artistSort='+artistSort+'&sortFlag='+sortFlag+'&searchQuery='+searchQuery+'&today='+todayFlag+'&phone='+phoneN)
+                .get('/songmng/get?from='+from+'&to='+to+'&titleSort='+titleSort+'&artistSort='+artistSort+'&sortFlag='+sortFlag+'&searchQuery='+searchQuery)
                 .then(function (res) {
                     setLoading(false);
                     let songsData = res.data;
@@ -117,8 +109,6 @@ const MyRequestScreen = () => {
                 } else {
                     Toast.show({ type: 'error', position: 'top', text1: 'Sorry!', text2: 'We are not taking requests at the moment.', visibilityTime: 3000, autoHide: true, topOffset: 30, bottomOffset: 40 });
                 }
-                setSinger('');
-                setDj('');
                 setModalVisible(false);
             }).catch(error => {
                 console.error(error);
@@ -128,26 +118,15 @@ const MyRequestScreen = () => {
     const from = page * itemsPerPage;
     const to = Math.min((page + 1) * itemsPerPage, songsCount);
     React.useEffect(() => {
-        getSongs(from, to, isEnabledToday);
-    }, [to, titleSort, artistSort, searchQuery, isEnabledToday]);
+        getSongs(from, to);
+    }, [to, titleSort, artistSort, searchQuery]);
     React.useEffect(() => {
         setPage(0);
     }, [itemsPerPage]);
     return (
         <ScrollView>
             <View style={[Styles.container]}>
-                <View style={[Styles.row] }>
-                    <Text>Past/Today</Text>
-                    <Switch
-                        trackColor={{false: '#767577', true: '#81b0ff'}}
-                        thumbColor={isEnabledToday ? '#f5dd4b' : '#f4f3f4'}
-                        ios_backgroundColor="#3e3e3e"
-                        onValueChange={toggleSwitch}
-                        value={isEnabledToday}
-                    />
-                </View>
                 <Searchbar
-                    style={{ marginTop: 10 }}
                     placeholder="Search"
                     onChangeText={onChangeSearch}
                     value={searchQuery}
@@ -156,24 +135,18 @@ const MyRequestScreen = () => {
                     <DataTable.Header>
                         <DataTable.Title sortDirection={titleSort} onPress={titleSortHandler}>Title</DataTable.Title>
                         <DataTable.Title sortDirection={artistSort} onPress={artistSortHandler}>Artist</DataTable.Title>
-                        {
-                            !isEnabledToday &&
-                                <DataTable.Title>Request</DataTable.Title>
-                        }
+                        <DataTable.Title>Request</DataTable.Title>
                     </DataTable.Header>
 
-                    {songsCount>0 && songs.map((item, index) => (
-                        <DataTable.Row key={`req${index}`}>
+                    {songsCount>0 && songs.map((item) => (
+                        <DataTable.Row key={`mng`+item.id}>
                             <DataTable.Cell>{item.title}</DataTable.Cell>
                             <DataTable.Cell>{item.artist}</DataTable.Cell>
-                            {
-                                !isEnabledToday &&
-                                    <DataTable.Cell>
-                                        <Pressable style={Styles.button} onPress={() => requestHandler(item)}>
-                                            <MaterialCommunityIcons name="send-circle-outline" size={24} color="white" />
-                                        </Pressable>
-                                    </DataTable.Cell>
-                            }
+                            <DataTable.Cell>
+                                <Pressable style={Styles.button} onPress={() => requestHandler(item)}>
+                                    <MaterialCommunityIcons name="send-circle-outline" size={24} color="white" />
+                                </Pressable>
+                            </DataTable.Cell>
                         </DataTable.Row>
                     ))}
 
@@ -255,4 +228,4 @@ const Styles = new StyleSheet.create({
     },
 });
 
-export default MyRequestScreen;
+export default SongManager;

@@ -11,14 +11,15 @@ const {width, height} = Dimensions.get('window');
 
 const SongList = () => {
     const [page, setPage] = useState(0);
-    const [numberOfItemsPerPageList] = useState([2, 3, 4]);
+    const [numberOfItemsPerPageList] = useState([5, 10, 15]);
     const [loading, setLoading] = useState(false);
     const [songs, setSongs] = useState([]);
-    const [allSongs, setASongs] = useState([]);
+    const [songsCount, setCountSongs] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
-    const [titleSort, setTitleSort] = useState("descending");
-    const [artistSort, setArtistSort] = useState("descending");
+    const [titleSort, setTitleSort] = useState("ascending");
+    const [artistSort, setArtistSort] = useState("ascending");
+    const [sortFlag, setSortFlag] = useState("title");
     const [itemsPerPage, onItemsPerPageChange] = useState(
         numberOfItemsPerPageList[0]
     );
@@ -29,40 +30,45 @@ const SongList = () => {
     const [requestSongId, setRequestSongId] = useState(0);
 
     useEffect(() => {
-        getSongs();
-    }, []);
-    const getSongs = async () => {
-        setLoading(true);
+        getSongsCount();
+    }, [searchQuery]);
+    const getSongsCount = async () => {
         await axios
-            .get('/songmng/get')
+            .get('/songmng/getCount?searchQuery='+searchQuery)
             .then(function (res) {
-                setLoading(false);
                 let songsData = res.data;
-                setASongs(songsData);
-                setSongs(songsData);
+                setCountSongs(songsData);
             }).catch(error => {
                 console.error(error);
             });
     }
+    const getSongs = async (from, to) => {
+        if (to > 0 && from < to) {
+            setLoading(true);
+            await axios
+                .get('/songmng/get?from='+from+'&to='+to+'&titleSort='+titleSort+'&artistSort='+artistSort+'&sortFlag='+sortFlag+'&searchQuery='+searchQuery)
+                .then(function (res) {
+                    setLoading(false);
+                    let songsData = res.data;
+                    setSongs(songsData);
+                }).catch(error => {
+                    console.error(error);
+                });
+        }
+    }
     const titleSortHandler = () => {
+        setSortFlag('title');
         if (titleSort === "descending") {
-            let sortedAry = songs.sort((a,b) => (a.title < b.title) ? 1 : ((b.title < a.title) ? -1 : 0));
-            setSongs(sortedAry);
             setTitleSort("ascending");
         } else {
-            let sortedAry = songs.sort((a,b) => (a.title > b.title) ? 1 : ((b.title > a.title) ? -1 : 0));
-            setSongs(sortedAry);
             setTitleSort("descending");
         }
     }
     const artistSortHandler = () => {
+        setSortFlag('artist');
         if (artistSort === "descending") {
-            let sortedAry = songs.sort((a,b) => (a.artist < b.artist) ? 1 : ((b.artist < a.artist) ? -1 : 0));
-            setSongs(sortedAry);
             setArtistSort("ascending");
         } else {
-            let sortedAry = songs.sort((a,b) => (a.artist > b.artist) ? 1 : ((b.artist > a.artist) ? -1 : 0));
-            setSongs(sortedAry);
             setArtistSort("descending");
         }
     }
@@ -81,10 +87,6 @@ const SongList = () => {
     
     const onChangeSearch = query => {
         setSearchQuery(query);
-        const filteredData = allSongs.filter(item => {
-            return item.title.toLowerCase().includes(query.toLowerCase()) || item.artist.toLowerCase().includes(query.toLowerCase());
-        });
-        setSongs(filteredData);
     }
     const requestHandler = (param) => {
         setRequestSongId(param.id);
@@ -107,6 +109,8 @@ const SongList = () => {
                 } else {
                     Toast.show({ type: 'error', position: 'top', text1: 'Sorry!', text2: 'We are not taking requests at the moment.', visibilityTime: 3000, autoHide: true, topOffset: 30, bottomOffset: 40 });
                 }
+                setSinger('');
+                setDj('');
                 setModalVisible(false);
             }).catch(error => {
                 console.error(error);
@@ -114,12 +118,13 @@ const SongList = () => {
     }
 
     const from = page * itemsPerPage;
-    const to = Math.min((page + 1) * itemsPerPage, songs.length);
-
+    const to = Math.min((page + 1) * itemsPerPage, songsCount);
+    React.useEffect(() => {
+        getSongs(from, to);
+    }, [to, titleSort, artistSort, searchQuery]);
     React.useEffect(() => {
         setPage(0);
     }, [itemsPerPage]);
-
     return (
         <ScrollView>
             <View style={[Styles.container]}>
@@ -135,8 +140,8 @@ const SongList = () => {
                         <DataTable.Title>Request</DataTable.Title>
                     </DataTable.Header>
 
-                    {songs.slice(from, to).map((item) => (
-                        <DataTable.Row key={item.id}>
+                    {songsCount>0 && songs.map((item) => (
+                        <DataTable.Row key={`list`+item.id}>
                             <DataTable.Cell>{item.title}</DataTable.Cell>
                             <DataTable.Cell>{item.artist}</DataTable.Cell>
                             <DataTable.Cell>
@@ -149,9 +154,9 @@ const SongList = () => {
 
                     <DataTable.Pagination
                         page={page}
-                        numberOfPages={Math.ceil(songs.length / itemsPerPage)}
+                        numberOfPages={Math.ceil(songsCount / itemsPerPage)}
                         onPageChange={(page) => setPage(page)}
-                        label={`${from + 1}-${to} of ${songs.length}`}
+                        label={`${from + 1}-${to} of ${songsCount}`}
                         numberOfItemsPerPageList={numberOfItemsPerPageList}
                         numberOfItemsPerPage={itemsPerPage}
                         onItemsPerPageChange={onItemsPerPageChange}
