@@ -11,6 +11,15 @@ import axios from '../../config/server.config';
 const {width, height} = Dimensions.get('window');
 
 const SignIn = ({ navigation }) => {
+    useEffect(() => {
+        checkU();
+    }, []);
+    const checkU = async () => {
+        const phoneN = await AsyncStorage.getItem('phone-number');
+        if (phoneN) {
+            navigation.replace('UserScreen')
+        }
+    }
     const [firstName, setFirstName] = useState('');
     const [phone, setPhone] = useState('');
     const [lastName, setLastName] = useState('');
@@ -78,15 +87,15 @@ const SignIn = ({ navigation }) => {
                 <StatusBar />
                 <Image source={require('../../assets/background.png')} style={[Styles.logo]} />
                 <View style={[Styles.row]}>
-                    <Text>First Name</Text>
+                    <Text style={[Styles.textStyle]}>First Name</Text>
                     <TextInput style={[Styles.textInput]} value={firstName} onChangeText={setFirstNameHandler} placeholder="Enter your first name" />
                 </View>
                 <View style={[Styles.row]}>
-                    <Text>Last Name</Text>
+                    <Text style={[Styles.textStyle]}>Last Name</Text>
                     <TextInput style={[Styles.textInput]} value={lastName} onChangeText={setLastNameHandler} placeholder="Enter your last name" />
                 </View>
                 <View style={[Styles.row]}>
-                    <Text>Mobile Number</Text>
+                    <Text style={[Styles.textStyle]}>Mobile Number</Text>
                     <IntlPhoneInput
                         value={phoneNumber}
                         defaultCountry="GB"
@@ -98,16 +107,16 @@ const SignIn = ({ navigation }) => {
                     animationType="fade"
                     onClose={closeModal}
                 >
-                    <Text>Please enter the verify code</Text>
+                    <Text style={[Styles.textStyle]}>Please enter the verify code</Text>
                     <View style={[Styles.row]}>
                         <TextInput style={[Styles.textInput]} value={verifyCode} onChangeText={setVerifyCodeHandler} />
                         <Pressable style={Styles.button} onPress={() => verifyHandler()}>
-                            <Text style={{color: 'white', fontWeight: 500}}>Confirm</Text>
+                            <Text style={{color: 'white', fontWeight: 500, fontSize: width/24}}>Confirm</Text>
                         </Pressable>
                     </View>
                 </AnimatedModal>
                 <Pressable style={Styles.button} onPress={() => signinHandler()}>
-                    <Text style={{color: 'white', fontWeight: 500}}>Sign In</Text>
+                    <Text style={{color: 'white', fontWeight: 500, fontSize: width/24}}>Sign In</Text>
                 </Pressable>
                 <Loading loading={loading} />
                 <Toast />
@@ -142,6 +151,10 @@ const Styles = new StyleSheet.create({
         paddingHorizontal: 15,
         marginTop: 5,
         borderRadius: 5,
+        fontSize: width/24
+    },
+    textStyle: {
+        fontSize: width/24
     },
     button: {
         width: '100%',

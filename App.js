@@ -11,7 +11,7 @@ export default function App() {
   return (
     <PaperProvider>
         <NavigationContainer>
-          <Stack.Navigator initialRouteName="UserScreen">
+          <Stack.Navigator initialRouteName="SignIn">
             <Stack.Screen name="SignIn" options={{ headerShown: false }} component={SignInScreen} />
             <Stack.Screen name="UserScreen" options={{ headerShown: false }} component={UserScreen} />
           </Stack.Navigator>

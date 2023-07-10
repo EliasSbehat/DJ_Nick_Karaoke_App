@@ -12,7 +12,7 @@ const {width, height} = Dimensions.get('window');
 
 const SongManager = () => {
     const [page, setPage] = useState(0);
-    const [numberOfItemsPerPageList] = useState([5, 10, 15]);
+    const [numberOfItemsPerPageList] = useState([15, 50, 100]);
     const [loading, setLoading] = useState(false);
     const [songs, setSongs] = useState([]);
     const [songsCount, setCountSongs] = useState([]);
@@ -166,10 +166,10 @@ const SongManager = () => {
             <View style={[Styles.container]}>
                 <View style={[Styles.toolContainer]}>
                     <Pressable style={Styles.toolButton}>
-                        <Text style={{color: 'white', fontWeight: 500}} onPress={()=>addHandler()}>Add</Text>
+                        <Text style={{color: 'white', fontWeight: 500, fontSize: width/24}} onPress={()=>addHandler()}>Add</Text>
                     </Pressable>
                     <View>
-                        <Text>Request</Text>
+                        <Text style={[Styles.textStyle]}>Request</Text>
                         <Switch
                             trackColor={{false: '#767577', true: '#81b0ff'}}
                             thumbColor={isEnabledRequest ? '#f5dd4b' : '#f4f3f4'}
@@ -186,22 +186,22 @@ const SongManager = () => {
                 />
                 <DataTable>
                     <DataTable.Header>
-                        <DataTable.Title sortDirection={titleSort} onPress={titleSortHandler}>Title</DataTable.Title>
-                        <DataTable.Title sortDirection={artistSort} onPress={artistSortHandler}>Artist</DataTable.Title>
-                        <DataTable.Title>Request</DataTable.Title>
+                        <DataTable.Title sortDirection={titleSort} onPress={titleSortHandler}><Text style={[Styles.textStyle]}>Title</Text></DataTable.Title>
+                        <DataTable.Title sortDirection={artistSort} onPress={artistSortHandler}><Text style={[Styles.textStyle]}>Artist</Text></DataTable.Title>
+                        <DataTable.Title><Text style={[Styles.textStyle]}>Request</Text></DataTable.Title>
                     </DataTable.Header>
 
                     {songsCount>0 && songs.map((item) => (
                         <DataTable.Row key={`mng`+item.id}>
-                            <DataTable.Cell>{item.title}</DataTable.Cell>
-                            <DataTable.Cell>{item.artist}</DataTable.Cell>
+                            <DataTable.Cell><Text style={[Styles.textStyle]}>{item.title}</Text></DataTable.Cell>
+                            <DataTable.Cell><Text style={[Styles.textStyle]}>{item.artist}</Text></DataTable.Cell>
                             <DataTable.Cell>
                                 <Pressable style={Styles.button} onPress={()=>deleteHandler(item.id)}>
-                                    <MaterialIcons name="delete-forever" size={18} color="white" />
+                                    <MaterialIcons name="delete-forever" size={width/24} color="white" />
                                 </Pressable>
                                 -
                                 <Pressable style={Styles.button} onPress={()=>editHandler(item)}>
-                                    <FontAwesome5 name="edit" size={18} color="white" />
+                                    <FontAwesome5 name="edit" size={width/24} color="white" />
                                 </Pressable>
                             </DataTable.Cell>
                         </DataTable.Row>
@@ -224,17 +224,17 @@ const SongManager = () => {
                     animationType="fade"
                     onClose={closeModal}
                 >
-                    <Text>Add/Edit Song</Text>
+                    <Text style={[Styles.textStyle]}>Add/Edit Song</Text>
                     <View style={[Styles.row]}>
-                        <Text>Title</Text>
+                        <Text style={[Styles.textStyle]}>Title</Text>
                         <TextInput style={[Styles.textInput]} value={title} onChangeText={setTitleHandler} />
                     </View>
                     <View style={[Styles.row]}>
-                        <Text>Artist</Text>
+                        <Text style={[Styles.textStyle]}>Artist</Text>
                         <TextInput style={[Styles.textInput]} value={artist} onChangeText={setArtistHandler} />
                     </View>
                     <Pressable style={Styles.button} onPress={() => submitHandler()}>
-                        <Text style={{color: 'white', fontWeight: 500}}>Submit</Text>
+                        <Text style={{color: 'white', fontWeight: 500, fontSize: width/24}}>Submit</Text>
                     </Pressable>
                 </AnimatedModal>
                 <Toast />
@@ -298,6 +298,10 @@ const Styles = new StyleSheet.create({
         paddingHorizontal: 15,
         marginTop: 5,
         borderRadius: 5,
+        fontSize: width/24
+    },
+    textStyle: {
+        fontSize: width/24
     },
 });
 

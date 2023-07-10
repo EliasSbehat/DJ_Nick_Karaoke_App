@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Dimensions } from 'react-native';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerItem } from "@react-navigation/drawer";
 import { getHeaderTitle } from '@react-navigation/elements';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,7 +10,7 @@ import SongList from './screens/user/songlist.screen'
 import MyRequestScreen from './screens/user/my.request';
 import SongManager from './screens/user/song.mng';
 import Navbar from './components/navbar';
-
+const {width, height} = Dimensions.get('window');
 
 const UserScreen = (props) => {
     const [userPermit, setUserPermit] = useState('0');
@@ -20,7 +20,7 @@ const UserScreen = (props) => {
         console.log("get");
     }, []);
     const getUser = async () => {
-        setLoading(true);
+        // setLoading(true);
         const phoneN = await AsyncStorage.getItem('phone-number');
     
         await axios
@@ -28,7 +28,7 @@ const UserScreen = (props) => {
             .then(function (res) {
                 let permit = res?.data[0]?.role;
                 setUserPermit(permit);
-                setLoading(false);
+                // setLoading(false);
             }).catch(error => {
                 console.error(error);
             });
@@ -39,7 +39,7 @@ const UserScreen = (props) => {
             return (
                 <DrawerContentScrollView {...props}>
                 <DrawerItemList {...props} />
-                <DrawerItem label="Logout" onPress={() => props.navigation.replace("SignIn")} />
+                <DrawerItem label="Logout" onPress={async () => {props.navigation.replace("SignIn"); await AsyncStorage.setItem('phone-number', ""); }} />
                 </DrawerContentScrollView>
             )
         }}
@@ -54,11 +54,11 @@ const UserScreen = (props) => {
                 }
             }}
         >
-            <Drawer.Screen name="Request Songs" component={SongList} options={{ drawerLabel: 'Request Songs' }} />
-            <Drawer.Screen name="My Requests" headerShown={false} component={MyRequestScreen} options={{ drawerLabel: 'My Requests' }} />
+            <Drawer.Screen labelStyle={{ fontSize: width/24 }} name="Request Songs" component={SongList} options={{ drawerLabel: 'Request Songs' }} />
+            <Drawer.Screen labelStyle={{ fontSize: width/24 }} name="My Requests" headerShown={false} component={MyRequestScreen} options={{ drawerLabel: 'My Requests' }} />
             {
                 userPermit===1 &&
-                <Drawer.Screen name="Song Manager" headerShown={false} component={SongManager} options={{ drawerLabel: 'Song Manager' }} />
+                <Drawer.Screen labelStyle={{ fontSize: width/24 }} name="Song Manager" headerShown={false} component={SongManager} options={{ drawerLabel: 'Song Manager' }} />
             }
         </Drawer.Navigator>
     )
