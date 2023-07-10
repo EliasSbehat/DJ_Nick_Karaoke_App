@@ -1,12 +1,13 @@
 import React, { useRef, useState, useEffect } from 'react';
-import {View, ScrollView, Text, Button, TextInput, Pressable, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import {View, ScrollView, Text, Button, TextInput, Pressable, StyleSheet, TouchableOpacity, Dimensions, Switch } from 'react-native';
 import { DataTable, Searchbar } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 import Toast from 'react-native-toast-message';
 import axios from '../../config/server.config';
 import Loading from '../../components/loading';
 import AnimatedModal from '../../components/animatedModal';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 const {width, height} = Dimensions.get('window');
 
 const SongManager = () => {
@@ -25,13 +26,37 @@ const SongManager = () => {
     );
     const [title, setTitle] = useState("");
     const [artist, setArtist] = useState("");
-    const [singer, setSinger] = useState("");
-    const [dj, setDj] = useState("");
-    const [requestSongId, setRequestSongId] = useState(0);
+    const [songId, setSongId] = useState(0);
+    const [isEnabledRequest, setIsEnabledRequest] = useState(true);
 
     useEffect(() => {
         getSongsCount();
+        getReqGet();
     }, [searchQuery]);
+    const toggleSwitch = async () => {
+        let turnFlag = !isEnabledRequest;
+        await axios
+            .get('/getRequestSetting/set?turn='+turnFlag)
+            .then(function (res) {
+                getReqGet();
+            }).catch(error => {
+                console.error(error);
+            });
+        setIsEnabledRequest(previousState => !previousState);
+    }
+    const getReqGet = async () => {
+        await axios
+            .get('/getRequestSetting')
+            .then(function (res) {
+                let reqData = res.data;
+                if (reqData.length>0) {
+                    let turn = (reqData[0]?.turn_on*1===1) ? true:false;
+                    setIsEnabledRequest(turn);
+                }
+            }).catch(error => {
+                console.error(error);
+            });
+    }
     const getSongsCount = async () => {
         await axios
             .get('/songmng/getCount?searchQuery='+searchQuery)
@@ -78,30 +103,38 @@ const SongManager = () => {
     const setArtistHandler = (event) => {
         setArtist(event);
     }
-    const setSingerHandler = (event) => {
-        setSinger(event);
-    }
-    const setDjHandler = (event) => {
-        setDj(event);
-    }
-    
     const onChangeSearch = query => {
         setSearchQuery(query);
     }
-    const requestHandler = (param) => {
-        setRequestSongId(param.id);
+    const addHandler = () => {
+        setModalVisible(true);
+    }
+    const editHandler = (param) => {
+        setModalVisible(true);
         setTitle(param.title);
         setArtist(param.artist);
-        setModalVisible(true);
+        setSongId(param.id);
+    }
+    const deleteHandler = async (id) => {
+        await axios
+            .get('/songmng/delete-song?id='+id)
+            .then(function (res) {
+                getSongsCount();
+                getSongs(from, to);
+            }).catch(error => {
+                console.error(error);
+            });
     }
     const closeModal = () => {
         setModalVisible(false);
+        setTitle("");
+        setArtist("");
+        setSongId(0);
     };
     const submitHandler = async () => {
         setLoading(true);
-        const phoneN = await AsyncStorage.getItem('phone-number');
         await axios
-            .get('/songmng/request-song?title=' + title + '&artist=' + artist + '&singer=' + singer + '&dj=' + dj + '&phone=' + phoneN + '&songId=' + requestSongId)
+            .get('/songmng/add?title=' + title + '&artist=' + artist + '&id=' + songId)
             .then(function (res) {
                 setLoading(false);
                 if (res?.data==="success") {
@@ -110,6 +143,11 @@ const SongManager = () => {
                     Toast.show({ type: 'error', position: 'top', text1: 'Sorry!', text2: 'We are not taking requests at the moment.', visibilityTime: 3000, autoHide: true, topOffset: 30, bottomOffset: 40 });
                 }
                 setModalVisible(false);
+                setTitle("");
+                setArtist("");
+                setSongId(0);
+                getSongsCount();
+                getSongs(from, to);
             }).catch(error => {
                 console.error(error);
             });
@@ -126,6 +164,21 @@ const SongManager = () => {
     return (
         <ScrollView>
             <View style={[Styles.container]}>
+                <View style={[Styles.toolContainer]}>
+                    <Pressable style={Styles.toolButton}>
+                        <Text style={{color: 'white', fontWeight: 500}} onPress={()=>addHandler()}>Add</Text>
+                    </Pressable>
+                    <View>
+                        <Text>Request</Text>
+                        <Switch
+                            trackColor={{false: '#767577', true: '#81b0ff'}}
+                            thumbColor={isEnabledRequest ? '#f5dd4b' : '#f4f3f4'}
+                            ios_backgroundColor="#3e3e3e"
+                            onValueChange={toggleSwitch}
+                            value={isEnabledRequest}
+                        />
+                    </View>
+                </View>
                 <Searchbar
                     placeholder="Search"
                     onChangeText={onChangeSearch}
@@ -143,8 +196,12 @@ const SongManager = () => {
                             <DataTable.Cell>{item.title}</DataTable.Cell>
                             <DataTable.Cell>{item.artist}</DataTable.Cell>
                             <DataTable.Cell>
-                                <Pressable style={Styles.button} onPress={() => requestHandler(item)}>
-                                    <MaterialCommunityIcons name="send-circle-outline" size={24} color="white" />
+                                <Pressable style={Styles.button} onPress={()=>deleteHandler(item.id)}>
+                                    <MaterialIcons name="delete-forever" size={18} color="white" />
+                                </Pressable>
+                                -
+                                <Pressable style={Styles.button} onPress={()=>editHandler(item)}>
+                                    <FontAwesome5 name="edit" size={18} color="white" />
                                 </Pressable>
                             </DataTable.Cell>
                         </DataTable.Row>
@@ -167,7 +224,7 @@ const SongManager = () => {
                     animationType="fade"
                     onClose={closeModal}
                 >
-                    <Text>Request Song</Text>
+                    <Text>Add/Edit Song</Text>
                     <View style={[Styles.row]}>
                         <Text>Title</Text>
                         <TextInput style={[Styles.textInput]} value={title} onChangeText={setTitleHandler} />
@@ -175,14 +232,6 @@ const SongManager = () => {
                     <View style={[Styles.row]}>
                         <Text>Artist</Text>
                         <TextInput style={[Styles.textInput]} value={artist} onChangeText={setArtistHandler} />
-                    </View>
-                    <View style={[Styles.row]}>
-                        <Text>Who is singing?</Text>
-                        <TextInput style={[Styles.textInput]} value={singer} onChangeText={setSingerHandler} />
-                    </View>
-                    <View style={[Styles.row]}>
-                        <Text>Message The DJ</Text>
-                        <TextInput style={[Styles.textInput]} value={dj} onChangeText={setDjHandler} />
                     </View>
                     <Pressable style={Styles.button} onPress={() => submitHandler()}>
                         <Text style={{color: 'white', fontWeight: 500}}>Submit</Text>
@@ -202,6 +251,19 @@ const Styles = new StyleSheet.create({
         marginTop: 20,
         paddingHorizontal: width * 0.05
     },
+    toolContainer: {
+        width: '100%',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        elevation: 30,
+        paddingVertical: 5,
+    },
+    btnGroupContainer: {
+        flexDirection: 'row', 
+        alignItems: 'center'
+    },
     row: {
         marginTop: 10,
         alignItems: 'flex-start',
@@ -215,6 +277,17 @@ const Styles = new StyleSheet.create({
         backgroundColor: '#3b71ca',
         borderRadius: 5,
         marginTop: 20,
+        marginBottom: 20
+    },
+    toolButton: {
+        width: '30%',
+        paddingVertical: 5,
+        paddingHorizontal: 5,
+        alignItems: 'center',
+        backgroundColor: '#3b71ca',
+        borderRadius: 5,
+        marginTop: 20,
+        marginLeft: 5,
         marginBottom: 20
     },
     textInput: {
