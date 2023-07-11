@@ -1,17 +1,18 @@
 import React, { useRef, useState, useEffect } from 'react';
-import {View, ScrollView, Text, Button, TextInput, Pressable, StyleSheet, TouchableOpacity, Dimensions, Switch } from 'react-native';
+import {View, ScrollView, Text, Button, TextInput, Pressable, StyleSheet, TouchableOpacity, Dimensions, Switch, SafeAreaView, FlatList } from 'react-native';
 import { DataTable, Searchbar } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
 import Toast from 'react-native-toast-message';
 import axios from '../../config/server.config';
 import Loading from '../../components/loading';
 import AnimatedModal from '../../components/animatedModal';
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 const {width, height} = Dimensions.get('window');
+const INITIAL_DATAS_COUNT = 10;
+const FETCH_DATAS_COUNT = 10;
 
 const SongManager = () => {
-    const [page, setPage] = useState(0);
+    const [page, setPage] = useState(1);
     const [numberOfItemsPerPageList] = useState([15, 50, 100]);
     const [loading, setLoading] = useState(false);
     const [songs, setSongs] = useState([]);
@@ -30,7 +31,8 @@ const SongManager = () => {
     const [isEnabledRequest, setIsEnabledRequest] = useState(true);
 
     useEffect(() => {
-        getSongsCount();
+        // getSongsCount();
+        getInitSongs(0, INITIAL_DATAS_COUNT, page);
         getReqGet();
     }, [searchQuery]);
     const toggleSwitch = async () => {
@@ -57,30 +59,58 @@ const SongManager = () => {
                 console.error(error);
             });
     }
-    const getSongsCount = async () => {
+    // const getSongsCount = async () => {
+    //     await axios
+    //         .get('/songmng/getCount?searchQuery='+searchQuery)
+    //         .then(function (res) {
+    //             let songsData = res.data;
+    //             setCountSongs(songsData);
+    //         }).catch(error => {
+    //             console.error(error);
+    //         });
+    // }
+    const getInitSongs = async (length, count, page) => {
+        if (!loading) setLoading(true);
         await axios
-            .get('/songmng/getCount?searchQuery='+searchQuery)
-            .then(function (res) {
+            .get('/songmng/get-loadmore?searchQuery='+searchQuery+'&page='+page+'&limit='+count+'&from='+length)
+            .then(async function (res) {
                 let songsData = res.data;
-                setCountSongs(songsData);
+                await setSongs(songsData);
+                await setPage((prevPage) => prevPage + 1);
+                await setLoading(false);
+                // setCountSongs(songsData);
             }).catch(error => {
                 console.error(error);
             });
     }
-    const getSongs = async (from, to) => {
-        if (to > 0 && from < to) {
-            setLoading(true);
-            await axios
-                .get('/songmng/get?from='+from+'&to='+to+'&titleSort='+titleSort+'&artistSort='+artistSort+'&sortFlag='+sortFlag+'&searchQuery='+searchQuery)
-                .then(function (res) {
-                    setLoading(false);
-                    let songsData = res.data;
-                    setSongs(songsData);
-                }).catch(error => {
-                    console.error(error);
-                });
-        }
+    const getSongs = async (length, count, page) => {
+        if (!loading) setLoading(true);
+        await axios
+            .get('/songmng/get-loadmore?searchQuery='+searchQuery+'&page='+page+'&limit='+count+'&from='+length)
+            .then(async function (res) {
+                let songsData = res.data;
+                await setSongs((prevSongs) => [...prevSongs, ...songsData]);
+                await setPage((prevPage) => prevPage + 1);
+                await setLoading(false);
+                // setCountSongs(songsData);
+            }).catch(error => {
+                console.error(error);
+            });
     }
+    // const getSongs = async (from, to) => {
+    //     if (to > 0 && from < to) {
+    //         setLoading(true);
+    //         await axios
+    //             .get('/songmng/get?from='+from+'&to='+to+'&titleSort='+titleSort+'&artistSort='+artistSort+'&sortFlag='+sortFlag+'&searchQuery='+searchQuery)
+    //             .then(function (res) {
+    //                 setLoading(false);
+    //                 let songsData = res.data;
+    //                 setSongs(songsData);
+    //             }).catch(error => {
+    //                 console.error(error);
+    //             });
+    //     }
+    // }
     const titleSortHandler = () => {
         setSortFlag('title');
         if (titleSort === "descending") {
@@ -119,8 +149,9 @@ const SongManager = () => {
         await axios
             .get('/songmng/delete-song?id='+id)
             .then(function (res) {
-                getSongsCount();
-                getSongs(from, to);
+                // getSongsCount();
+                // getSongs(from, to);
+                getInitSongs(0, INITIAL_DATAS_COUNT, page);
             }).catch(error => {
                 console.error(error);
             });
@@ -146,8 +177,9 @@ const SongManager = () => {
                 setTitle("");
                 setArtist("");
                 setSongId(0);
-                getSongsCount();
-                getSongs(from, to);
+                // getSongsCount();
+                // getSongs(from, to);
+                getInitSongs(0, INITIAL_DATAS_COUNT, page);
             }).catch(error => {
                 console.error(error);
             });
@@ -155,14 +187,14 @@ const SongManager = () => {
 
     const from = page * itemsPerPage;
     const to = Math.min((page + 1) * itemsPerPage, songsCount);
-    React.useEffect(() => {
-        getSongs(from, to);
-    }, [to, titleSort, artistSort, searchQuery]);
-    React.useEffect(() => {
-        setPage(0);
-    }, [itemsPerPage]);
+    // React.useEffect(() => {
+    //     getSongs(from, to);
+    // }, [to, titleSort, artistSort, searchQuery]);
+    // React.useEffect(() => {
+    //     setPage(0);
+    // }, [itemsPerPage]);
     return (
-        <ScrollView>
+        // <ScrollView>
             <View style={[Styles.container]}>
                 <View style={[Styles.toolContainer]}>
                     <Pressable style={Styles.toolButton}>
@@ -184,7 +216,45 @@ const SongManager = () => {
                     onChangeText={onChangeSearch}
                     value={searchQuery}
                 />
-                <DataTable>
+                <SafeAreaView style={{ marginTop: 10 }}>
+                    <FlatList
+                        data={songs}
+                        keyExtractor={(item, index) => index.toString()}
+                        onEndReached={() => getSongs(songs.length, FETCH_DATAS_COUNT, page)}
+                        onEndReachedThreshold={0.5}
+                        renderItem={({ item }) => (
+                            <View
+                                style={{
+                                borderStyle: 'solid',
+                                borderTopWidth: 0.5,
+                                padding: 8,
+                                width: width*0.9,
+                                height: 80,
+                                flex: 1,
+                                flexDirection: 'row',
+                                // justifyContent: 'center',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                }}
+                            >
+                                <View style={{ width: "69%" }}>
+                                    <Text style={{fontWeight: 600, fontSize: width/23}}>{item.title}</Text>
+                                    <Text style={[Styles.textStyle]}>{item.artist}</Text>
+                                </View>
+                                <View style={{ flex:1, flexDirection: 'row' }}>
+                                    <Pressable style={Styles.actionButton} onPress={()=>deleteHandler(item.id)}>
+                                        <MaterialIcons name="delete-forever" size={width/24} color="white" />
+                                    </Pressable>
+                                    <Pressable style={Styles.actionButton} onPress={()=>editHandler(item)}>
+                                        <FontAwesome5 name="edit" size={width/24} color="white" />
+                                    </Pressable>
+                                </View>
+                            </View>
+                            )
+                        }
+                    />
+                </SafeAreaView>
+                {/* <DataTable>
                     <DataTable.Header>
                         <DataTable.Title sortDirection={titleSort} onPress={titleSortHandler}><Text style={[Styles.textStyle]}>Title</Text></DataTable.Title>
                         <DataTable.Title sortDirection={artistSort} onPress={artistSortHandler}><Text style={[Styles.textStyle]}>Artist</Text></DataTable.Title>
@@ -218,7 +288,7 @@ const SongManager = () => {
                         showFastPaginationControls
                         selectPageDropdownLabel={'Rows per page'}
                     />
-                </DataTable>
+                </DataTable> */}
                 <AnimatedModal
                     visible={modalVisible}
                     animationType="fade"
@@ -236,11 +306,12 @@ const SongManager = () => {
                     <Pressable style={Styles.button} onPress={() => submitHandler()}>
                         <Text style={{color: 'white', fontWeight: 500, fontSize: width/24}}>Submit</Text>
                     </Pressable>
+                    <Loading loading={loading} />
                 </AnimatedModal>
                 <Toast />
                 <Loading loading={loading} />
             </View>
-        </ScrollView>
+        // </ScrollView>
     )
 }
 const Styles = new StyleSheet.create({
@@ -248,7 +319,8 @@ const Styles = new StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 20,
+        marginTop: 60,
+        marginBottom: 130,
         paddingHorizontal: width * 0.05
     },
     toolContainer: {
@@ -257,6 +329,7 @@ const Styles = new StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
+        marginTop: 80,
         elevation: 30,
         paddingVertical: 5,
     },
@@ -278,6 +351,16 @@ const Styles = new StyleSheet.create({
         borderRadius: 5,
         marginTop: 20,
         marginBottom: 20
+    },
+    actionButton: {
+        // width: '100%',
+        paddingVertical: 10,
+        paddingHorizontal: 10,
+        alignItems: 'center',
+        backgroundColor: '#3b71ca',
+        borderRadius: 5,
+        marginLeft: 5,
+        // marginBottom: 20
     },
     toolButton: {
         width: '30%',

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import {View, ScrollView, Text, Button, TextInput, Pressable, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import {View, ScrollView, Text, Button, TextInput, Pressable, StyleSheet, TouchableOpacity, Dimensions, SafeAreaView, FlatList } from 'react-native';
 import { DataTable, Searchbar } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
@@ -8,9 +8,11 @@ import Loading from '../../components/loading';
 import AnimatedModal from '../../components/animatedModal';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 const {width, height} = Dimensions.get('window');
+const INITIAL_DATAS_COUNT = 10;
+const FETCH_DATAS_COUNT = 10;
 
 const SongList = () => {
-    const [page, setPage] = useState(0);
+    const [page, setPage] = useState(1);
     const [numberOfItemsPerPageList] = useState([15, 50, 100]);
     const [loading, setLoading] = useState(false);
     const [songs, setSongs] = useState([]);
@@ -30,32 +32,56 @@ const SongList = () => {
     const [requestSongId, setRequestSongId] = useState(0);
 
     useEffect(() => {
-        getSongsCount();
+        getInitSongs(0, INITIAL_DATAS_COUNT, page);
     }, [searchQuery]);
-    const getSongsCount = async () => {
+    // React.useEffect(() => {
+    //     getSongs(from, to);
+    // }, [to, titleSort, artistSort, searchQuery]);
+    // React.useEffect(() => {
+    //     setPage(0);
+    // }, [itemsPerPage]);
+    const getInitSongs = async (length, count, page) => {
+        if (!loading) setLoading(true);
         await axios
-            .get('/songmng/getCount?searchQuery='+searchQuery)
-            .then(function (res) {
+            .get('/songmng/get-loadmore?searchQuery='+searchQuery+'&page='+page+'&limit='+count+'&from='+length)
+            .then(async function (res) {
                 let songsData = res.data;
-                setCountSongs(songsData);
+                await setSongs(songsData);
+                await setPage((prevPage) => prevPage + 1);
+                await setLoading(false);
+                // setCountSongs(songsData);
             }).catch(error => {
                 console.error(error);
             });
     }
-    const getSongs = async (from, to) => {
-        if (to > 0 && from < to) {
-            setLoading(true);
-            await axios
-                .get('/songmng/get?from='+from+'&to='+to+'&titleSort='+titleSort+'&artistSort='+artistSort+'&sortFlag='+sortFlag+'&searchQuery='+searchQuery)
-                .then(function (res) {
-                    setLoading(false);
-                    let songsData = res.data;
-                    setSongs(songsData);
-                }).catch(error => {
-                    console.error(error);
-                });
-        }
+    const getSongs = async (length, count, page) => {
+        if (!loading) setLoading(true);
+        await axios
+            .get('/songmng/get-loadmore?searchQuery='+searchQuery+'&page='+page+'&limit='+count+'&from='+length)
+            .then(async function (res) {
+                let songsData = res.data;
+                await setSongs((prevSongs) => [...prevSongs, ...songsData]);
+                await setPage((prevPage) => prevPage + 1);
+                await setLoading(false);
+                // setCountSongs(songsData);
+            }).catch(error => {
+                console.error(error);
+            });
     }
+    // const getSongs = async (from, to) => {
+    //     if (to > 0 && from < to) {
+    //         setLoading(true);
+    //         await axios
+    //             .get('/songmng/get?from='+from+'&to='+to+'&titleSort='+titleSort+'&artistSort='+artistSort+'&sortFlag='+sortFlag+'&searchQuery='+searchQuery)
+    //             .then(function (res) {
+    //                 setLoading(false);
+    //                 let songsData = res.data;
+    //                 setSongs(songsData);
+    //             }).catch(error => {
+    //                 console.error(error);
+    //             });
+    //     }
+    // }
     const titleSortHandler = () => {
         setSortFlag('title');
         if (titleSort === "descending") {
@@ -89,6 +115,7 @@ const SongList = () => {
         setSearchQuery(query);
     }
     const requestHandler = (param) => {
+        console.log(param);
         setRequestSongId(param.id);
         setTitle(param.title);
         setArtist(param.artist);
@@ -98,6 +125,7 @@ const SongList = () => {
         setModalVisible(false);
     };
     const submitHandler = async () => {
+        console.log("submit");
         setLoading(true);
         const phoneN = await AsyncStorage.getItem('phone-number');
         await axios
@@ -119,21 +147,49 @@ const SongList = () => {
 
     const from = page * itemsPerPage;
     const to = Math.min((page + 1) * itemsPerPage, songsCount);
-    React.useEffect(() => {
-        getSongs(from, to);
-    }, [to, titleSort, artistSort, searchQuery]);
-    React.useEffect(() => {
-        setPage(0);
-    }, [itemsPerPage]);
+    
     return (
-        <ScrollView>
+        // <ScrollView>
             <View style={[Styles.container]}>
                 <Searchbar
                     placeholder="Search"
                     onChangeText={onChangeSearch}
                     value={searchQuery}
                 />
-                <DataTable>
+                <SafeAreaView style={{ marginTop: 10 }}>
+                    <FlatList
+                        data={songs}
+                        keyExtractor={(item, index) => index.toString()}
+                        onEndReached={() => getSongs(songs.length, FETCH_DATAS_COUNT, page)}
+                        onEndReachedThreshold={0.5}
+                        renderItem={({ item }) => (
+                            <View
+                                style={{
+                                borderStyle: 'solid',
+                                borderTopWidth: 0.5,
+                                padding: 8,
+                                width: width*0.9,
+                                height: 80,
+                                flex: 1,
+                                flexDirection: 'row',
+                                // justifyContent: 'center',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                }}
+                            >
+                                <View style={{ width: "69%" }}>
+                                    <Text style={{fontWeight: 600, fontSize: width/23}}>{item.title}</Text>
+                                    <Text style={[Styles.textStyle]}>{item.artist}</Text>
+                                </View>
+                                <Pressable style={Styles.reqButton} onPress={() => requestHandler(item)}>
+                                    <Text style={{color: 'white', fontWeight: 500, fontSize: width/24}}>Request</Text>
+                                </Pressable>
+                            </View>
+                            )
+                        }
+                    />
+                </SafeAreaView>
+                {/* <DataTable>
                     <DataTable.Header>
                         <DataTable.Title sortDirection={titleSort} onPress={titleSortHandler}><Text style={[Styles.textStyle]}>Title</Text></DataTable.Title>
                         <DataTable.Title sortDirection={artistSort} onPress={artistSortHandler}><Text style={[Styles.textStyle]}>Artist</Text></DataTable.Title>
@@ -142,9 +198,9 @@ const SongList = () => {
 
                     {songsCount>0 && songs.map((item) => (
                         <DataTable.Row key={`list`+item.id}>
-                            <DataTable.Cell><Text style={[Styles.textStyle]}>{item.title}</Text></DataTable.Cell>
-                            <DataTable.Cell><Text style={[Styles.textStyle]}>{item.artist}</Text></DataTable.Cell>
-                            <DataTable.Cell>
+                            <DataTable.Cell style={Styles.cell} numberOfLines={2}><Text style={[Styles.textStyle]}>{item.title}</Text></DataTable.Cell>
+                            <DataTable.Cell style={Styles.cell} numberOfLines={2}><Text style={[Styles.textStyle]}>{item.artist}</Text></DataTable.Cell>
+                            <DataTable.Cell style={Styles.cell}>
                                 <Pressable style={Styles.button} onPress={() => requestHandler(item)}>
                                     <Text style={{color: 'white', fontWeight: 500, fontSize: width/24}}>Request</Text>
                                 </Pressable>
@@ -163,7 +219,7 @@ const SongList = () => {
                         showFastPaginationControls
                         selectPageDropdownLabel={'Rows per page'}
                     />
-                </DataTable>
+                </DataTable> */}
                 <AnimatedModal
                     visible={modalVisible}
                     animationType="fade"
@@ -189,11 +245,12 @@ const SongList = () => {
                     <Pressable style={Styles.button} onPress={() => submitHandler()}>
                         <Text style={{color: 'white', fontWeight: 500, fontSize: width/24}}>Submit</Text>
                     </Pressable>
+                    <Loading loading={loading} />
                 </AnimatedModal>
                 <Toast />
                 <Loading loading={loading} />
             </View>
-        </ScrollView>
+        // </ScrollView>
     )
 }
 const Styles = new StyleSheet.create({
@@ -201,13 +258,22 @@ const Styles = new StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 20,
+        marginTop: 50,
+        marginBottom: 50,
         paddingHorizontal: width * 0.05
     },
     row: {
         marginTop: 10,
         alignItems: 'flex-start',
         width:' 100%'
+    },
+    cell: {
+        flex: 1,
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        flexWrap: 'wrap',
+        height: 'auto',
     },
     button: {
         width: '100%',
@@ -218,6 +284,14 @@ const Styles = new StyleSheet.create({
         borderRadius: 5,
         marginTop: 20,
         marginBottom: 20
+    },
+    reqButton: {
+        width: '30%',
+        paddingVertical: 5,
+        paddingHorizontal: 5,
+        alignItems: 'center',
+        backgroundColor: '#3b71ca',
+        borderRadius: 5,
     },
     textInput: {
         width: '100%',

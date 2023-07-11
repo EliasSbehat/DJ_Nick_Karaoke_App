@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import {View, ScrollView, Text, Button, TextInput, Pressable, StyleSheet, TouchableOpacity, Dimensions, Switch } from 'react-native';
+import {View, ScrollView, Text, Button, TextInput, Pressable, StyleSheet, TouchableOpacity, Dimensions, Switch, SafeAreaView, FlatList } from 'react-native';
 import { DataTable, Searchbar } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
@@ -8,9 +8,11 @@ import Loading from '../../components/loading';
 import AnimatedModal from '../../components/animatedModal';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 const {width, height} = Dimensions.get('window');
+const INITIAL_DATAS_COUNT = 10;
+const FETCH_DATAS_COUNT = 10;
 
 const MyRequestScreen = () => {
-    const [page, setPage] = useState(0);
+    const [page, setPage] = useState(1);
     const [numberOfItemsPerPageList] = useState([15, 50, 100]);
     const [loading, setLoading] = useState(false);
     const [songs, setSongs] = useState([]);
@@ -30,40 +32,70 @@ const MyRequestScreen = () => {
     const [requestSongId, setRequestSongId] = useState(0);
 
     const [isEnabledToday, setIsEnabledToday] = useState(true);
+
+    useEffect(() => {
+        getInitSongs(0, INITIAL_DATAS_COUNT, page, isEnabledToday);
+    }, [searchQuery, isEnabledToday]);
+    // const getSongsCount = async (todayFlag) => {
+    //     const phoneN = await AsyncStorage.getItem('phone-number');
+    //     // today=' + todayFlag + '&phone=' + phoneN
+    //     await axios
+    //         .get('/songmng/getByUserCount?searchQuery='+searchQuery+'&today='+todayFlag+'&phone='+phoneN)
+    //         .then(function (res) {
+    //             let songsData = res.data;
+    //             setCountSongs(songsData);
+    //         }).catch(error => {
+    //             console.error(error);
+    //         });
+    // }
     const toggleSwitch = () => {
         setIsEnabledToday(previousState => !previousState);
     }
-
-    useEffect(() => {
-        getSongsCount(isEnabledToday);
-    }, [searchQuery, isEnabledToday]);
-    const getSongsCount = async (todayFlag) => {
+    const getInitSongs = async (length, count, page, todayFlag) => {
+        if (!loading) setLoading(true);
         const phoneN = await AsyncStorage.getItem('phone-number');
-        // today=' + todayFlag + '&phone=' + phoneN
         await axios
-            .get('/songmng/getByUserCount?searchQuery='+searchQuery+'&today='+todayFlag+'&phone='+phoneN)
-            .then(function (res) {
+            .get('/songmng/getByUser-loadmore?searchQuery='+searchQuery+'&page='+page+'&limit='+count+'&from='+length+'&today='+todayFlag+'&phone='+phoneN)
+            .then(async function (res) {
                 let songsData = res.data;
-                setCountSongs(songsData);
+                await setSongs(songsData);
+                await setPage((prevPage) => prevPage + 1);
+                await setLoading(false);
+                // setCountSongs(songsData);
             }).catch(error => {
                 console.error(error);
             });
     }
-    const getSongs = async (from, to, todayFlag) => {
-        if (to > 0 && from < to) {
-            setLoading(true);
-            const phoneN = await AsyncStorage.getItem('phone-number');
-            await axios
-                .get('/songmng/getByUser?from='+from+'&to='+to+'&titleSort='+titleSort+'&artistSort='+artistSort+'&sortFlag='+sortFlag+'&searchQuery='+searchQuery+'&today='+todayFlag+'&phone='+phoneN)
-                .then(function (res) {
-                    setLoading(false);
-                    let songsData = res.data;
-                    setSongs(songsData);
-                }).catch(error => {
-                    console.error(error);
-                });
-        }
+    const getSongs = async (length, count, page, todayFlag) => {
+        if (!loading) setLoading(true);
+        const phoneN = await AsyncStorage.getItem('phone-number');
+        await axios
+            .get('/songmng/getByUser-loadmore?searchQuery='+searchQuery+'&page='+page+'&limit='+count+'&from='+length+'&today='+todayFlag+'&phone='+phoneN)
+            .then(async function (res) {
+                let songsData = res.data;
+                await setSongs((prevSongs) => [...prevSongs, ...songsData]);
+                await setPage((prevPage) => prevPage + 1);
+                await setLoading(false);
+                // setCountSongs(songsData);
+            }).catch(error => {
+                console.error(error);
+            });
     }
+    // const getSongs = async (from, to, todayFlag) => {
+    //     if (to > 0 && from < to) {
+    //         setLoading(true);
+    //         const phoneN = await AsyncStorage.getItem('phone-number');
+    //         await axios
+    //             .get('/songmng/getByUser?from='+from+'&to='+to+'&titleSort='+titleSort+'&artistSort='+artistSort+'&sortFlag='+sortFlag+'&searchQuery='+searchQuery+'&today='+todayFlag+'&phone='+phoneN)
+    //             .then(function (res) {
+    //                 setLoading(false);
+    //                 let songsData = res.data;
+    //                 setSongs(songsData);
+    //             }).catch(error => {
+    //                 console.error(error);
+    //             });
+    //     }
+    // }
     const titleSortHandler = () => {
         setSortFlag('title');
         if (titleSort === "descending") {
@@ -127,16 +159,16 @@ const MyRequestScreen = () => {
 
     const from = page * itemsPerPage;
     const to = Math.min((page + 1) * itemsPerPage, songsCount);
-    React.useEffect(() => {
-        getSongs(from, to, isEnabledToday);
-    }, [to, titleSort, artistSort, searchQuery, isEnabledToday]);
-    React.useEffect(() => {
-        setPage(0);
-    }, [itemsPerPage]);
+    // React.useEffect(() => {
+    //     getSongs(from, to, isEnabledToday);
+    // }, [to, titleSort, artistSort, searchQuery, isEnabledToday]);
+    // React.useEffect(() => {
+    //     setPage(0);
+    // }, [itemsPerPage]);
     return (
-        <ScrollView>
+        // <ScrollView>
             <View style={[Styles.container]}>
-                <View style={[Styles.row] }>
+                <View style={[Styles.todayFlag]}>
                     <Text style={[Styles.textStyle]}>Past/Today</Text>
                     <Switch
                         trackColor={{false: '#767577', true: '#81b0ff'}}
@@ -152,17 +184,53 @@ const MyRequestScreen = () => {
                     onChangeText={onChangeSearch}
                     value={searchQuery}
                 />
-                <DataTable>
-                    <DataTable.Header>
+                <SafeAreaView style={{ marginTop: 10 }}>
+                    <FlatList
+                        data={songs}
+                        keyExtractor={(item, index) => index.toString()}
+                        onEndReached={() => getSongs(songs.length, FETCH_DATAS_COUNT, page, isEnabledToday)}
+                        onEndReachedThreshold={0.5}
+                        renderItem={({ item }) => (
+                            <View
+                                style={{
+                                borderStyle: 'solid',
+                                borderTopWidth: 0.5,
+                                padding: 8,
+                                width: width*0.9,
+                                height: 80,
+                                flex: 1,
+                                flexDirection: 'row',
+                                // justifyContent: 'center',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                }}
+                            >
+                                <View style={{ width: (!isEnabledToday)?"69%":"100%" }}>
+                                    <Text style={{fontWeight: 600, fontSize: width/23}}>{item.title}</Text>
+                                    <Text style={[Styles.textStyle]}>{item.artist}</Text>
+                                </View>
+                                {
+                                    !isEnabledToday &&
+                                        <Pressable style={Styles.reqButton} onPress={() => requestHandler(item)}>
+                                            <Text style={{color: 'white', fontWeight: 500, fontSize: width/24}}>Request</Text>
+                                        </Pressable>
+                                }
+                            </View>
+                            )
+                        }
+                    />
+                </SafeAreaView>
+                {/* <DataTable> */}
+                    {/* <DataTable.Header>
                         <DataTable.Title sortDirection={titleSort} onPress={titleSortHandler}><Text style={[Styles.textStyle]}>Title</Text></DataTable.Title>
                         <DataTable.Title sortDirection={artistSort} onPress={artistSortHandler}><Text style={[Styles.textStyle]}>Artist</Text></DataTable.Title>
                         {
                             !isEnabledToday &&
                                 <DataTable.Title><Text style={[Styles.textStyle]}>Request</Text></DataTable.Title>
                         }
-                    </DataTable.Header>
+                    </DataTable.Header> */}
 
-                    {songsCount>0 && songs.map((item, index) => (
+                    {/* {songsCount>0 && songs.map((item, index) => (
                         <DataTable.Row key={`req${index}`}>
                             <DataTable.Cell><Text style={[Styles.textStyle]}>{item.title}</Text></DataTable.Cell>
                             <DataTable.Cell><Text style={[Styles.textStyle]}>{item.artist}</Text></DataTable.Cell>
@@ -175,9 +243,9 @@ const MyRequestScreen = () => {
                                     </DataTable.Cell>
                             }
                         </DataTable.Row>
-                    ))}
+                    ))} */}
 
-                    <DataTable.Pagination
+                    {/* <DataTable.Pagination
                         page={page}
                         numberOfPages={Math.ceil(songsCount / itemsPerPage)}
                         onPageChange={(page) => setPage(page)}
@@ -187,8 +255,8 @@ const MyRequestScreen = () => {
                         onItemsPerPageChange={onItemsPerPageChange}
                         showFastPaginationControls
                         selectPageDropdownLabel={'Rows per page'}
-                    />
-                </DataTable>
+                    /> */}
+                {/* </DataTable> */}
                 <AnimatedModal
                     visible={modalVisible}
                     animationType="fade"
@@ -214,11 +282,12 @@ const MyRequestScreen = () => {
                     <Pressable style={Styles.button} onPress={() => submitHandler()}>
                         <Text style={{color: 'white', fontWeight: 500, fontSize: width/24}}>Submit</Text>
                     </Pressable>
+                    <Loading loading={loading} />
                 </AnimatedModal>
                 <Toast />
                 <Loading loading={loading} />
             </View>
-        </ScrollView>
+        // </ScrollView>
     )
 }
 const Styles = new StyleSheet.create({
@@ -226,13 +295,19 @@ const Styles = new StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 20,
+        marginTop: 80,
+        marginBottom: 100,
         paddingHorizontal: width * 0.05
     },
     row: {
         marginTop: 10,
         alignItems: 'flex-start',
-        width:' 100%'
+        width:' 100%',
+    },
+    todayFlag: {
+        marginTop: 50,
+        width:' 100%',
+        alignItems: 'flex-start',
     },
     button: {
         width: '100%',
@@ -243,6 +318,14 @@ const Styles = new StyleSheet.create({
         borderRadius: 5,
         marginTop: 20,
         marginBottom: 20
+    },
+    reqButton: {
+        width: '30%',
+        paddingVertical: 5,
+        paddingHorizontal: 5,
+        alignItems: 'center',
+        backgroundColor: '#3b71ca',
+        borderRadius: 5,
     },
     textInput: {
         width: '100%',

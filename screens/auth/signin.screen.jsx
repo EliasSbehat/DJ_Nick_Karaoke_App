@@ -134,9 +134,12 @@ const Styles = new StyleSheet.create({
         paddingHorizontal: width * 0.05
     },
     logo: {
-        width: width * 0.6,
-        height: height * 0.4,
-        resizeMode: 'cover'
+        width: '50%',
+        height: 200,
+        resizeMode: 'contain'
+        // width: width * 0.5,
+        // height: height * 0.3,
+        // // resizeMode: 'cover'
     },
     row: {
         marginTop: 10,
