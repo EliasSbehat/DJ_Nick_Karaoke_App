@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useRef} from 'react';
 import LottieView from 'lottie-react-native';
 import * as Animatable from 'react-native-animatable';
-import Toast from 'react-native-toast-message';
+import Toast, { BaseToast, ErrorToast } from 'react-native-toast-message';
 import { StatusBar, ScrollView, Pressable, View, Text, TextInput, Dimensions, StyleSheet, Image } from 'react-native';
 import IntlPhoneInput from 'react-native-intl-phone-input';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,6 +10,35 @@ import Loading from '../../components/loading';
 import axios from '../../config/server.config';
 const {width, height} = Dimensions.get('window');
 
+const toastConfig = {
+    success: (props) => (
+      <BaseToast
+        {...props}
+        style={{ borderLeftColor: 'green', height: 120 }}
+        text1Style={{
+          fontSize: width/23,
+        }}
+        text2Style={{
+            fontSize: width/24,
+        }}
+      />
+    ),
+    /*
+      Overwrite 'error' type,
+      by modifying the existing `ErrorToast` component
+    */
+    error: (props) => (
+      <ErrorToast
+        {...props}
+        text1Style={{
+            fontSize: width/23,
+          }}
+          text2Style={{
+              fontSize: width/24,
+        }}
+      />
+    )
+};
 const SignIn = ({ navigation }) => {
     useEffect(() => {
         checkU();
@@ -94,9 +123,12 @@ const SignIn = ({ navigation }) => {
                     <Text style={[Styles.textStyle]}>Last Name</Text>
                     <TextInput style={[Styles.textInput]} value={lastName} onChangeText={setLastNameHandler} placeholder="Enter your last name" />
                 </View>
-                <View style={[Styles.row]}>
+                <View style={[Styles.telRow]}>
                     <Text style={[Styles.textStyle]}>Mobile Number</Text>
                     <IntlPhoneInput
+                        containerStyle={{ flex: 1 }}
+                        dialCodeTextStyle={{ fontSize: width/24 }}
+                        phoneInputStyle={{ fontSize:width/24 }}
                         value={phoneNumber}
                         defaultCountry="GB"
                         onChangeText={setPhoneNumberHandler}
@@ -119,7 +151,7 @@ const SignIn = ({ navigation }) => {
                     <Text style={{color: 'white', fontWeight: 500, fontSize: width/24}}>Sign In</Text>
                 </Pressable>
                 <Loading loading={loading} />
-                <Toast />
+                <Toast config={toastConfig} />
             </View>
         </ScrollView>
     );
@@ -146,6 +178,12 @@ const Styles = new StyleSheet.create({
         alignItems: 'flex-start',
         width:' 100%'
     },
+    telRow: {
+        flex: 1,
+        marginTop: 10,
+        alignItems: 'flex-start',
+        width:' 100%'
+    },  
     textInput: {
         width: '100%',
         borderStyle: 'solid',

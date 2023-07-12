@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import {View, ScrollView, Text, Button, TextInput, Pressable, StyleSheet, TouchableOpacity, Dimensions, Switch, SafeAreaView, FlatList } from 'react-native';
 import { DataTable, Searchbar } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Toast from 'react-native-toast-message';
+import Toast, { BaseToast, ErrorToast } from 'react-native-toast-message';
 import axios from '../../config/server.config';
 import Loading from '../../components/loading';
 import AnimatedModal from '../../components/animatedModal';
@@ -10,6 +10,35 @@ import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 const {width, height} = Dimensions.get('window');
 const INITIAL_DATAS_COUNT = 10;
 const FETCH_DATAS_COUNT = 10;
+const toastConfig = {
+    success: (props) => (
+      <BaseToast
+        {...props}
+        style={{ borderLeftColor: 'green', height: 120 }}
+        text1Style={{
+          fontSize: width/23,
+        }}
+        text2Style={{
+            fontSize: width/24,
+        }}
+      />
+    ),
+    /*
+      Overwrite 'error' type,
+      by modifying the existing `ErrorToast` component
+    */
+    error: (props) => (
+      <ErrorToast
+        {...props}
+        text1Style={{
+            fontSize: width/23,
+          }}
+          text2Style={{
+              fontSize: width/24,
+        }}
+      />
+    )
+};
 
 const SongManager = () => {
     const [page, setPage] = useState(1);
@@ -229,7 +258,6 @@ const SongManager = () => {
                                 borderTopWidth: 0.5,
                                 padding: 8,
                                 width: width*0.9,
-                                height: 80,
                                 flex: 1,
                                 flexDirection: 'row',
                                 // justifyContent: 'center',
@@ -308,7 +336,7 @@ const SongManager = () => {
                     </Pressable>
                     <Loading loading={loading} />
                 </AnimatedModal>
-                <Toast />
+                <Toast config={toastConfig} />
                 <Loading loading={loading} />
             </View>
         // </ScrollView>
