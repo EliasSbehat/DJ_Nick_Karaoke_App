@@ -15,7 +15,7 @@ const toastConfig = {
     success: (props) => (
       <BaseToast
         {...props}
-        style={{ borderLeftColor: 'green', height: 120 }}
+        style={{ borderLeftColor: 'green', height: 130, width: width*0.9 }}
         text1Style={{
           fontSize: width/23,
         }}
@@ -31,11 +31,12 @@ const toastConfig = {
     error: (props) => (
       <ErrorToast
         {...props}
+        style={{ borderLeftColor: 'red', height: 130, width: width*0.95 }}
         text1Style={{
-            fontSize: width/23,
+            fontSize: width/24,
           }}
           text2Style={{
-            fontSize: width/24,
+            fontSize: width/25,
         }}
       />
     )
@@ -145,7 +146,6 @@ const SongList = () => {
         setSearchQuery(query);
     }
     const requestHandler = (param) => {
-        console.log(param);
         setRequestSongId(param.id);
         setTitle(param.title);
         setArtist(param.artist);
@@ -155,7 +155,6 @@ const SongList = () => {
         setModalVisible(false);
     };
     const submitHandler = async () => {
-        console.log("submit");
         setLoading(true);
         const phoneN = await AsyncStorage.getItem('phone-number');
         await axios
@@ -184,6 +183,7 @@ const SongList = () => {
                 <Searchbar
                     placeholder="Search"
                     onChangeText={onChangeSearch}
+                    inputStyle={{ fontSize: width/24 }}
                     value={searchQuery}
                 />
                 <SafeAreaView style={{ marginTop: 10 }}>

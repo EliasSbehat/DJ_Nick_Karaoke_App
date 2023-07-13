@@ -14,7 +14,7 @@ const toastConfig = {
     success: (props) => (
       <BaseToast
         {...props}
-        style={{ borderLeftColor: 'green', height: 120 }}
+        style={{ borderLeftColor: 'green', height: 130, width: width*0.9 }}
         text1Style={{
           fontSize: width/23,
         }}
@@ -30,11 +30,12 @@ const toastConfig = {
     error: (props) => (
       <ErrorToast
         {...props}
+        style={{ borderLeftColor: 'red', height: 130, width: width*0.95 }}
         text1Style={{
-            fontSize: width/23,
+            fontSize: width/24,
           }}
           text2Style={{
-              fontSize: width/24,
+            fontSize: width/25,
         }}
       />
     )
@@ -209,6 +210,7 @@ const MyRequestScreen = () => {
                 <Searchbar
                     style={{ marginTop: 10 }}
                     placeholder="Search"
+                    inputStyle={{ fontSize: width/24 }}
                     onChangeText={onChangeSearch}
                     value={searchQuery}
                 />
