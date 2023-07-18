@@ -56,6 +56,14 @@ const SignIn = ({ navigation }) => {
     const [verifyCode, setVerifyCode] = React.useState('');
     const [modalVisible, setModalVisible] = useState(false);
     const [loading, setLoading] = useState(false);
+
+    const [scrollEnabled, setScrollEnabled] = useState(true);
+
+    const handleButtonPress = () => {
+        setScrollEnabled(false);
+        // perform button action
+        setScrollEnabled(true);
+    };
     
     const setFirstNameHandler = (event) => {
         setFirstName(event);
@@ -71,6 +79,7 @@ const SignIn = ({ navigation }) => {
         setVerifyCode(event);
     }
     const verifyHandler = async () => {
+        setScrollEnabled(false);
         setLoading(true);
         const phoneN = await AsyncStorage.getItem('phone-number');
         await axios
@@ -86,8 +95,10 @@ const SignIn = ({ navigation }) => {
             }).catch(error => {
                 console.error(error);
             });
+        setScrollEnabled(true);
     }
     const signinHandler = async () => {
+        setScrollEnabled(false);
         setLoading(true);
         await axios
             .get('/signin/checkuser?first_name=' + firstName + '&last_name=' + lastName + '&phone=' + phoneNumber)
@@ -105,13 +116,14 @@ const SignIn = ({ navigation }) => {
             }).catch(error => {
                 console.error(error);
             });
+        setScrollEnabled(true);
     }
     const closeModal = () => {
         setModalVisible(false);
     };
     
     return (
-        <ScrollView>
+        <ScrollView scrollEnabled={scrollEnabled} keyboardShouldPersistTaps="handled">
             <View style={[Styles.container]}>
                 <StatusBar />
                 <Image source={require('../../assets/background.png')} style={[Styles.logo]} />

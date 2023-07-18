@@ -39,7 +39,7 @@ const UserScreen = (props) => {
             return (
                 <DrawerContentScrollView {...props}>
                 <DrawerItemList {...props} />
-                <DrawerItem label="Logout" onPress={async () => {props.navigation.replace("SignIn"); await AsyncStorage.setItem('phone-number', ""); }} />
+                <DrawerItem label="Logout" onPress={async () => {await AsyncStorage.setItem('phone-number', ""); props.navigation.replace("SignIn"); }} />
                 </DrawerContentScrollView>
             )
         }}
