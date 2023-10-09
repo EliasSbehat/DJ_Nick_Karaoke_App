@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, View, Animated, StyleSheet, TouchableOpacity } from 'react-native';
 
-const AnimatedModal = ({ visible, animationType, onClose, children }) => {
+const AnimatedModal = ({ visible, animationType, onClose, children, verify }) => {
   const [modalOpacity] = useState(new Animated.Value(0));
 
   const closeModal = () => {
@@ -27,18 +27,35 @@ const AnimatedModal = ({ visible, animationType, onClose, children }) => {
   }, [visible]);
 
   return (
-    <Modal visible={visible} transparent animationType={animationType}>
-      <TouchableOpacity
-        style={styles.overlay}
-        activeOpacity={1}
-        onPress={closeModal}
-      >
-        <Animated.View
-          style={[styles.container, { opacity: modalOpacity }]}
+    <Modal visible={visible} transparent animationType={animationType} >
+      {
+        verify &&
+        <TouchableOpacity
+          style={styles.overlay}
+          activeOpacity={1}
+          // onPress={closeModal}
         >
-          {children}
-        </Animated.View>
-      </TouchableOpacity>
+          <Animated.View
+            style={[styles.container, { opacity: modalOpacity }]}
+          >
+            {children}
+          </Animated.View>
+        </TouchableOpacity>
+      }
+      {
+        !verify &&
+        <TouchableOpacity
+          style={styles.overlay}
+          activeOpacity={1}
+          onPress={closeModal}
+        >
+          <Animated.View
+            style={[styles.container, { opacity: modalOpacity }]}
+          >
+            {children}
+          </Animated.View>
+        </TouchableOpacity>
+      }
     </Modal>
   );
 };

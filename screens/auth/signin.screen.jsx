@@ -144,12 +144,14 @@ const SignIn = ({ navigation }) => {
                         value={phoneNumber}
                         defaultCountry="GB"
                         onChangeText={setPhoneNumberHandler}
+                        mask="9999 999999"
                     />
                 </View>
                 <AnimatedModal
                     visible={modalVisible}
                     animationType="fade"
                     onClose={closeModal}
+                    verify={true}
                 >
                     <Text style={[Styles.textStyle]}>Please enter the verify code</Text>
                     <View style={[Styles.row]}>
