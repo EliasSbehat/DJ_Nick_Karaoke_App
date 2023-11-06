@@ -46,7 +46,15 @@ const SignIn = ({ navigation }) => {
     const checkU = async () => {
         const phoneN = await AsyncStorage.getItem('phone-number');
         if (phoneN) {
-            navigation.replace('UserScreen')
+            await axios
+            .get('/signin/checkuserbyPhone?phone=' + phoneN)
+            .then(async function (res) {
+                if (res?.data === "success") {
+                    navigation.replace('UserScreen')
+                }
+            }).catch(error => {
+                console.error(error);
+            });
         }
     }
     const [firstName, setFirstName] = useState('');
@@ -114,6 +122,7 @@ const SignIn = ({ navigation }) => {
                     }
                 }
             }).catch(error => {
+                Toast.show({ type: 'error', position: 'top', text1: 'Host not found', text2: 'Please check your internet connection', visibilityTime: 65000, autoHide: true, topOffset: 30, bottomOffset: 40 });
                 console.error(error);
             });
         setScrollEnabled(true);

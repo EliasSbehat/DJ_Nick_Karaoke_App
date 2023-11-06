@@ -22,7 +22,19 @@ const UserScreen = (props) => {
     const getUser = async () => {
         // setLoading(true);
         const phoneN = await AsyncStorage.getItem('phone-number');
-    
+        setInterval(async ()=>{
+            console.log("Login tester");
+            await axios
+            .get('/signin/checkuserbyPhone?phone=' + phoneN)
+            .then(async function (res) {
+                console.log(res?.data);
+                if (res?.data === "no-user") {
+                    props.navigation.replace('SignIn')
+                }
+            }).catch(error => {
+                console.error(error);
+            });
+        }, 60000)
         await axios
             .get('/getUserByPhone?phone=' + phoneN)
             .then(function (res) {
