@@ -7,6 +7,7 @@ import axios from '../../config/server.config';
 import Loading from '../../components/loading';
 import AnimatedModal from '../../components/animatedModal';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { color } from 'react-native-reanimated';
 const {width, height} = Dimensions.get('window');
 const INITIAL_DATAS_COUNT = 10;
 const FETCH_DATAS_COUNT = 10;
@@ -145,10 +146,13 @@ const SongList = () => {
     const onChangeSearch = query => {
         setSearchQuery(query);
     }
-    const requestHandler = (param) => {
+    const requestHandler = async (param) => {
         setRequestSongId(param.id);
         setTitle(param.title);
         setArtist(param.artist);
+        const first_name = await AsyncStorage.getItem('first_name');
+        const last_name = await AsyncStorage.getItem('last_name');
+        setSinger(first_name+' '+last_name);
         setModalVisible(true);
     }
     const closeModal = () => {
@@ -253,6 +257,7 @@ const SongList = () => {
                     visible={modalVisible}
                     animationType="fade"
                     onClose={closeModal}
+                    verify={true}
                 >
                     <Text style={[Styles.textStyle]}>Request Song</Text>
                     <View style={[Styles.row]}>
@@ -265,15 +270,20 @@ const SongList = () => {
                     </View>
                     <View style={[Styles.row]}>
                         <Text style={[Styles.textStyle]}>Who is singing?</Text>
-                        <TextInput style={[Styles.textInput]} value={singer} onChangeText={setSingerHandler} />
+                        <TextInput style={[Styles.textInput]} value={singer} editable={false} selectTextOnFocus={false} onChangeText={setSingerHandler} />
                     </View>
                     <View style={[Styles.row]}>
                         <Text style={[Styles.textStyle]}>Message The DJ</Text>
                         <TextInput style={[Styles.textInput]} value={dj} onChangeText={setDjHandler} />
                     </View>
-                    <Pressable style={Styles.button} onPress={() => submitHandler()}>
-                        <Text style={{color: 'white', fontWeight: 500, fontSize: width/24}}>Submit</Text>
-                    </Pressable>
+                    <View style={[Styles.heroRow]}>
+                        <Pressable style={[Styles.button, {backgroundColor: '#E65B65'}]} onPress={() => closeModal()}>
+                            <Text style={{color: 'white', fontWeight: 500, fontSize: width/24}}>Cancel</Text>
+                        </Pressable>
+                        <Pressable style={[Styles.button, {backgroundColor: '#37AE48'}]} onPress={() => submitHandler()}>
+                            <Text style={{color: 'white', fontWeight: 500, fontSize: width/24}}>Submit</Text>
+                        </Pressable>
+                    </View>
                     <Loading loading={loading} />
                 </AnimatedModal>
                 <Toast config={toastConfig} />
@@ -296,6 +306,13 @@ const Styles = new StyleSheet.create({
         alignItems: 'flex-start',
         width:' 100%'
     },
+    heroRow: {
+        marginTop: 10,
+        alignItems: 'flex-start',
+        width:' 100%',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
     cell: {
         flex: 1,
         width: '100%',
@@ -305,13 +322,13 @@ const Styles = new StyleSheet.create({
         height: 'auto',
     },
     button: {
-        width: '100%',
+        width: '48%',
         paddingVertical: 5,
         paddingHorizontal: 5,
         alignItems: 'center',
         backgroundColor: '#3b71ca',
         borderRadius: 5,
-        marginTop: 20,
+        marginTop: 0,
         marginBottom: 20
     },
     reqButton: {

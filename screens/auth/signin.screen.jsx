@@ -80,7 +80,15 @@ const SignIn = ({ navigation }) => {
         setLastName(event);
     }
     const setPhoneNumberHandler = (event) => {
-        let phoneN = event.dialCode+event.phoneNumber.replaceAll(" ", "");
+
+        let pn = event.phoneNumber+"";
+        if (pn[0]=="0") {
+            var char = pn[0];
+            const replaced = pn.replace(char, "");
+            pn = replaced;
+        }
+        let phoneN = event.dialCode+pn.replaceAll(" ", "");
+        console.log(phoneN)
         setPhoneNumber(phoneN.replaceAll("+", ""));
     }
     const setVerifyCodeHandler = (event) => {
@@ -115,9 +123,11 @@ const SignIn = ({ navigation }) => {
                 if (res?.data === "wrong user") {
                     Toast.show({ type: 'error', position: 'top', text1: 'Confirm Email Verification', text2: 'Please verify your identity!', visibilityTime: 3000, autoHide: true, topOffset: 30, bottomOffset: 40 });
                 } else {
-                    setPhone(res?.data);
-                    if (phoneNumber === (res?.data+"")) {
+                    setPhone(res?.data[0]);
+                    if (phoneNumber === (res?.data[0]+"")) {
                         await AsyncStorage.setItem('phone-number', phoneNumber);
+                        await AsyncStorage.setItem('first_name', res?.data[1]?.first_name);
+                        await AsyncStorage.setItem('last_name', res?.data[1]?.last_name);
                         setModalVisible(true);
                     }
                 }
