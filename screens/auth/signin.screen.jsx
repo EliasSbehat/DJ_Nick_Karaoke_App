@@ -97,12 +97,13 @@ const SignIn = ({ navigation }) => {
     const verifyHandler = async () => {
         setScrollEnabled(false);
         setLoading(true);
-        const phoneN = await AsyncStorage.getItem('phone-number');
+        const phoneN = await AsyncStorage.getItem('phone-number-temp');
         await axios
             .get('/verify/code?code=' + verifyCode + '&phone=' + phoneN)
-            .then(function (res) {
+            .then(async function (res) {
                 setLoading(false);
                 if (res?.data=="success") {
+                    await AsyncStorage.setItem('phone-number', phoneN);
                     navigation.replace('UserScreen')
                 } else {
                     Toast.show({ type: 'error', position: 'top', text1: 'Invalid Code', text2: '', visibilityTime: 3000, autoHide: true, topOffset: 30, bottomOffset: 40 });
@@ -122,10 +123,12 @@ const SignIn = ({ navigation }) => {
                 setLoading(false);
                 if (res?.data === "wrong user") {
                     Toast.show({ type: 'error', position: 'top', text1: 'Confirm Email Verification', text2: 'Please verify your identity!', visibilityTime: 3000, autoHide: true, topOffset: 30, bottomOffset: 40 });
+                } else if (res?.data === "invalid input") {
+                    Toast.show({ type: 'error', position: 'top', text1: 'Not entered the all information', text2: 'Please check it again!', visibilityTime: 3000, autoHide: true, topOffset: 30, bottomOffset: 40 });
                 } else {
                     setPhone(res?.data[0]);
                     if (phoneNumber === (res?.data[0]+"")) {
-                        await AsyncStorage.setItem('phone-number', phoneNumber);
+                        await AsyncStorage.setItem('phone-number-temp', phoneNumber);
                         await AsyncStorage.setItem('first_name', res?.data[1]?.first_name);
                         await AsyncStorage.setItem('last_name', res?.data[1]?.last_name);
                         setModalVisible(true);
