@@ -34,11 +34,14 @@ const UserScreen = (props) => {
             }).catch(error => {
                 console.error(error);
             });
-        }, 60000)
+        }, 30000)
         await axios
             .get('/getUserByPhone?phone=' + phoneN)
-            .then(function (res) {
+            .then(async function (res) {
                 let permit = res?.data[0]?.role;
+                console.log('set user name: '+ res?.data[0]?.first_name);
+                await AsyncStorage.setItem('first_name', res?.data[0]?.first_name);
+                await AsyncStorage.setItem('last_name', res?.data[0]?.last_name);
                 setUserPermit(permit);
                 // setLoading(false);
             }).catch(error => {
